@@ -6,6 +6,15 @@ module RSpec
       # Provides the implementation for `contain_exactly` and `match_array`.
       # Not intended to be instantiated directly.
       class ContainExactly < BaseMatcher
+        def initialize(expected = nil)
+          super
+          @transitive = false
+        end
+
+        def transitive
+          @transitive = true
+          self
+        end
         # @api private
         # @return [String]
         def failure_message
@@ -72,7 +81,9 @@ module RSpec
 
         def match(_expected, _actual)
           return false unless convert_actual_to_an_array
-          match_when_sorted? || (extra_items.empty? && missing_items.empty?)
+          return true if match_when_sorted?
+          return match_when_sorted? if @transitive
+          (extra_items.empty? && missing_items.empty?)
         end
 
         # This cannot always work (e.g. when dealing with unsortable items,

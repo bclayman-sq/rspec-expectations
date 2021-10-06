@@ -95,6 +95,36 @@ RSpec.describe "should_not =~ [:with, :multiple, :args]", :uses_should do
 end
 
 RSpec.describe "using contain_exactly with expect" do
+  # currently, using contains_exactly with 50 elements takes > 10s;
+  # some users have reported it never finishing at all
+  context "speeding up matching for elements that obey transitivity" do
+    require 'benchmark'
+    let(:a) { Array.new(10000) { rand(1...9) } }
+    let(:b) { a.shuffle }
+
+    context "when expected and actual match" do
+      it "matches" do
+        expect(a).to contain_exactly(*b).transitive
+      end
+
+      it "runs very fast" do
+        time = Benchmark.realtime do
+          expect(a).to contain_exactly(*b).transitive
+        end
+        # this is in seconds
+        expect(time).to be < 0.1
+      end
+    end
+
+    context "when expected and actual do not match" do
+      let(:b) { Array.new(10000) { rand(1...9) } }
+
+      it "does not match" do
+        expect(a).not_to contain_exactly(*b).transitive
+      end
+    end
+  end
+
   it "passes a valid positive expectation" do
     expect([1, 2]).to contain_exactly(2, 1)
   end
